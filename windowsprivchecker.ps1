@@ -1,8 +1,8 @@
-###############################################################################################################
+<##############################################################################################################
 ## [Title]: linuxprivchecker.sh -- a Linux Privilege Escalation Check Script
-## [Original Author]:Mike Merrill (linted) -- https://github.com/linted
+## [Author]:Mike Merrill (linted) -- https://github.com/linted
 ##
-## [Special Thanks]: Mike Czumak (T_v3rn1x) for his work on the original linux priv checker
+## [Special Thanks]: Mike Czumak (T_v3rn1x). Thanks for the work done on the original linux priv checker
 ##-------------------------------------------------------------------------------------------------------------
 ## [Details]:
 ## This script is intended to be executed locally on a Windows box to enumerate basic system info and
@@ -26,4 +26,6 @@
 ## EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER
 ## IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 ## USE OR OTHER DEALINGS IN THE SOFTWARE.
-###############################################################################################################
+##############################################################################################################>
+
+
