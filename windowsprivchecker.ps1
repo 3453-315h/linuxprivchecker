@@ -29,3 +29,45 @@
 ##############################################################################################################>
 
 
+$LINE = '*' * 80
+
+function scriptTITLE () {
+    echo $LINE
+    echo "    LINUX PRIVILEGE ESCALATION CHECKER"
+    echo "    https://github.com/linted/linuxprivchecker for more info..."
+    echo ${LINE};
+    echo
+}
+
+function systemAREAtitle (systemAREA) {
+    echo $LINE
+    echo "    $systemArea"
+    echo $LINE
+    echo
+}
+
+function cmdRESPONSE (systemName, command) {
+    $results = Invoke-Expression command
+    if ($results -ne $null) {
+        #got results
+        echo "[+] $systemName"
+        echo $results
+    } else {
+        echo "[-] $systemName"
+    }
+}
+
+function operatingSYSTEM () {
+    systemAREAtitle "OPERATING SYSTEM"
+
+    cmdRESPONSE "Distribution" "(Get-WmiObject -class Win32_OperatingSystem).Caption";
+
+    cmdRESPONSE "Kernel" "[System.Environment]::OSVersion.Version";
+
+    cmdRESPONSE "Hostname" "`$env:computername";
+}
+
+
+
+
+
