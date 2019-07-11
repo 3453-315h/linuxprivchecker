@@ -80,6 +80,13 @@ class SearchHandler(socketserver.StreamRequestHandler):
                             query = " ".join(line)
                             if query not in inputs:
                                 inputs.append(query)
+                            temp = line[-3]
+                            line[-3] += '.x'
+                            query = " ".join(line)
+                            if query not in inputs:
+                                print(query)
+                                inputs.append(query)
+                            line[-3] = temp
                         else:
                             if _LEVEL_ >= 2:
                                 line[-3] += '.x'
