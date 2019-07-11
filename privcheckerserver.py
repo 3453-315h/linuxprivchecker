@@ -32,25 +32,72 @@ try:
     import argparse
     import multiprocessing
     from csv import DictReader
+    import re
 except Exception as e:
     print("Caught exception: {}\nAre you running with python3?".format(e))
     exit(1)
 
-
 _PORT_ = 4521
 _IP_ = '0.0.0.0'
 _SEARCHSPLOIT_ = "/usr/share/exploitdb/files_exploits.csv"
+_LEVEL_ = 0
 
 class SearchHandler(socketserver.StreamRequestHandler):
     def handle(self):
         try:
             print('[+] Connection from '+ self.client_address[0])
             self.pool = multiprocessing.Pool(10)
-            for output in self.pool.imap(SearchHandler.search, iter(self.rfile.readline, b'\n')):
+
+            inputs = []
+
+            for line in iter(self.rfile.readline, b'\n'):
+                line = line.decode().strip().lower().split(" ")
+
+                if ":" in line[-1]:
+                    line[-1] = line[-1].split(":", 2)[1]
+
+                line[-1] = re.split("[\-+]", line[-1])[0]
+
+                line.append('priv')
+                line.append('esc')
+
+                query = " ".join(line)
+
+                if query not in inputs:
+                    inputs.append(query)
+
+                line[0] = re.split("[0-9\.]+(\-|$)", line[0])[0]
+
+                query = " ".join(line)
+
+                if query not in inputs:
+                    inputs.append(query)
+
+                if _LEVEL_ >= 1:
+                    while '.' in line[-3]:
+                        line[-3] = line[-3].rsplit('.', 1)[0]
+                        if '.' in line[-3]:
+                            query = " ".join(line)
+                            if query not in inputs:
+                                inputs.append(query)
+                        else:
+                            if _LEVEL_ >= 2:
+                                line[-3] += '.x'
+                                query = " ".join(line)
+                                if query not in inputs:
+                                    inputs.append(query)
+                            if _LEVEL_ >= 3:
+                                line[-3] = line[-3][:-1]
+                                query = " ".join(line)
+                                if query not in inputs:
+                                    inputs.append(query)
+                            break
+
+            for output in self.pool.imap(SearchHandler.search, iter(inputs)):
                 if output:
                     print(output)
                     self.wfile.write(output.encode() + b'\n')
-                
+
             self.pool.close()
             print('[$] Closing connection from {}\n'.format(self.client_address[0]))
             self.pool.join()
@@ -62,20 +109,17 @@ class SearchHandler(socketserver.StreamRequestHandler):
 
     @classmethod
     def search(cls, data):
-        query = data.decode().strip().split(" ")
-        query[-1] = query[-1][:3] #cut down on the last item which should be the version number
+        query = data.split(" ")
+
         output = []
         for rows in ExploitServer.exploitDatabase:
-            if all([term in rows["description"] for term in query]):
+            if all([term in rows["description"].lower() for term in query]):
                 output.append('\t'.join((rows["description"], rows["file"])))
         if output:
-            return "[ ] " + "\n".join([' '.join(query), *output])
-
-
+            return "[ ] " + "\n".join([' '.join(query[:-2]), *output])
 
 class ExploitServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
    exploitDatabase = []
-    
 
 def main():
     exploit = ExploitServer((_IP_, _PORT_), SearchHandler)
@@ -86,13 +130,17 @@ def main():
         print('[-] Caught exception. Shutting down.')
         exploit.shutdown()
         exploit.server_close()
-    
+    finally:
+        exploit.shutdown()
+        exploit.server_close()
+
 if __name__ == "__main__":
     #parse the args
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--ip", help="Ip to listen on")
     parser.add_argument("-p", "--port", help="Port to listen on")
     parser.add_argument("-f", "--file", help="The exploit csv to use")
+    parser.add_argument("-l", "--level", action="count", default=0, help="The level of version matching to attempt. The higher the level, the more likely you are to match an exploit, however the number of false positive matches also increases.")
     args = parser.parse_args()
     if args.ip:
         _IP_ = args.ip
@@ -100,6 +148,8 @@ if __name__ == "__main__":
         _PORT_ = args.port
     if args.file:
         _SEARCHSPLOIT_ = args.file
+    if args.level:
+        _LEVEL_ = args.level
 
     if not isfile(_SEARCHSPLOIT_):
         print("[-] Cannot find csv databse: {}\nFor more details visit: https://github.com/offensive-security/exploit-database".format(_SEARCHSPLOIT_))
